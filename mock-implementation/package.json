@@ -1,0 +1,24 @@
+{
+  "name": "zk-age-verification-mock",
+  "version": "1.0.0",
+  "description": "Mock implementation of ZK age verification",
+  "main": "zk_age_verification_mock.js",
+  "scripts": {
+    "test": "node zk_age_verification_mock.js",
+    "start": "node zk_age_verification_mock.js"
+  },
+  "keywords": [
+    "zero-knowledge",
+    "zk-snark",
+    "age-verification",
+    "privacy"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "snarkjs": "^0.7.5"
+  }
+}

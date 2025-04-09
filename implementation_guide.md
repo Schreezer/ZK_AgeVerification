@@ -1,7 +1,3 @@
-Below is a detailed Markdown (`.md`) file outlining the implementation steps for the backend, service provider, and browser extension components of the **Trust-Minimized Age Verification Architecture**. This guide walks you through building a privacy-preserving age verification system step-by-step, assuming basic knowledge of Node.js, JavaScript, and browser extensions.
-
----
-
 # Trust-Minimized Age Verification Architecture Implementation Guide
 
 This document provides a comprehensive guide to implement a trust-minimized age verification system using Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge (ZK-SNARKs). The system consists of three main components:
