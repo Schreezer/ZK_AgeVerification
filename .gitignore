@@ -1,0 +1,41 @@
+# Node modules
+node_modules/
+
+# Build artifacts
+**/circuit_build/
+**/build/
+
+# Large binary files
+*.wasm
+*.r1cs
+*.sym
+*.ptau
+*.bin
+*.pack
+
+# Circom binaries
+**/circom
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Specific large files
+ecdsa-p384-circom/circuits/ecdsa_func.circom
