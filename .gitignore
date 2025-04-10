@@ -18,6 +18,24 @@ service-provider-backend/node_modules/
 *.ptau
 *.bin
 *.pack
+*.pck
+*.zip
+**/*.wasm
+**/*.r1cs
+**/*.sym
+**/*.ptau
+**/*.bin
+**/*.pack
+**/*.pck
+**/*.zip
+mock-implementation/**/*.wasm
+mock-implementation/**/*.r1cs
+mock-implementation/**/*.sym
+mock-implementation/**/*.ptau
+mock-implementation/**/*.bin
+mock-implementation/**/*.pack
+mock-implementation/**/*.pck
+mock-implementation/**/*.zip
 
 # Circom binaries
 **/circom
@@ -49,3 +67,7 @@ mock-implementation/age_verification.sym
 mock-implementation/age_verification_circuit.sym
 mock-implementation/simple.sym
 ziS9sywP
+mock-implementation/circuit_build/
+mock-implementation/ptau/
+ecdsa-p384-circom/
+project.zip
