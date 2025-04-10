@@ -1,5 +1,11 @@
 # Node modules
 node_modules/
+*/node_modules/
+**/node_modules/
+mock-implementation/node_modules/
+ecdsa-p384-circom/node_modules/
+government-backend/node_modules/
+service-provider-backend/node_modules/
 
 # Build artifacts
 **/circuit_build/
@@ -39,3 +45,7 @@ yarn-error.log*
 
 # Specific large files
 ecdsa-p384-circom/circuits/ecdsa_func.circom
+mock-implementation/age_verification.sym
+mock-implementation/age_verification_circuit.sym
+mock-implementation/simple.sym
+ziS9sywP
