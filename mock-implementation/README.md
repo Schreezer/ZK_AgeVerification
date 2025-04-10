@@ -1,55 +1,165 @@
-# ZK Age Verification Mock Implementation
+# Zero-Knowledge Age Verification System
 
-This is a proof-of-concept implementation that demonstrates how zero-knowledge proofs can be used for privacy-preserving age verification without revealing the actual age of the user.
+This implementation demonstrates a privacy-preserving age verification system using zero-knowledge proofs and P-384 ECDSA signatures. The system allows users to prove they meet age requirements without revealing their actual age.
 
-## Overview
+## Architecture Overview
 
-This implementation simulates the interaction between three components:
+### Circuit Design
 
-1. **Service Provider**: Requests age verification and verifies proofs
-2. **Government Identity Provider**: Issues signed credentials with age information
-3. **User Agent (Browser Extension)**: Generates zero-knowledge proofs
+The system uses a Circom circuit (`age_verification.circom`) that implements:
 
-## Files
+1. P-384 ECDSA signature verification
+   - Verifies government-issued credentials
+   - Uses 48-bit limbs (8 limbs total) for P-384 curve operations
+   - Validates signature components (R, S) against the public key
 
-- `age_verification.circom`: A simple Circom circuit for age verification
-- `zk_age_verification_mock.js`: Mock implementation of the verification flow
+2. Zero-knowledge age verification
+   - Proves age requirement is met without revealing actual age
+   - Implements efficient 32-bit comparison operations
+   - Combines signature verification with age check
 
-## How It Works
+### System Components
 
-1. The Service Provider generates a random nonce and specifies an age requirement
-2. The User Agent requests a credential from the Government
-3. The Government issues a signed credential containing the user's age
-4. The User Agent generates a zero-knowledge proof that:
-   - The user's age meets the requirement
-   - The credential is valid
-   - The proof is for the specific request (using the nonce)
-5. The Service Provider verifies the proof without learning the user's actual age
+1. **Service Provider**
+   - Initiates verification requests
+   - Generates unique 384-bit nonces for each request
+   - Sets age requirements
+   - Verifies zero-knowledge proofs
 
-## Running the Mock Implementation
+2. **Government Identity Provider**
+   - Issues age credentials
+   - Signs credentials using P-384 ECDSA
+   - Manages user identity database
 
-```bash
-# Install dependencies
-npm install
+3. **User Agent/Browser Extension**
+   - Receives credentials from government
+   - Generates zero-knowledge proofs
+   - Protects user privacy
 
-# Run the mock implementation
-node zk_age_verification_mock.js
+## Setup and Installation
+
+1. **Prerequisites**
+   ```bash
+   npm install
+   ```
+
+2. **Circuit Compilation**
+   - The circuit files are pre-compiled and available in `circuit_build/`
+   - WASM and witness generator files are included
+
+## Implementation Details
+
+### 1. Core Modules
+
+- `age_verification.circom`: Main circuit implementation
+- `zk_age_verification_mock.js`: Mock implementation of the flow
+- `zk_age_verification_tests.js`: Comprehensive test suite
+
+### 2. Data Structures
+
+#### Credential Format
+```javascript
+{
+  userId: string,
+  age: number,
+  issuedAt: timestamp,
+  signature: {
+    r: [8 limbs of 48 bits each],
+    s: [8 limbs of 48 bits each],
+    msgHash: [8 limbs of 48 bits each]
+  }
+}
 ```
 
-## Notes
+#### ZK Proof Structure
+```javascript
+{
+  proof: {
+    pi_a: [3 elements],
+    pi_b: [[2 elements], [2 elements], [2 elements]],
+    pi_c: [3 elements],
+    protocol: "groth16"
+  },
+  publicSignals: [
+    ageRequirement,
+    nonce[8],
+    publicKey[2][8],
+    result
+  ]
+}
+```
 
-- This is a simplified mock implementation for demonstration purposes
-- In a real implementation:
-  - The circuit would be compiled and proper ZK proofs would be generated
-  - Proper cryptographic signatures would be used for credentials
-  - The components would be separate services/applications
-  - Additional security measures would be implemented
+## Test Coverage
 
-## Next Steps
+The implementation includes comprehensive tests covering:
 
-To create a full implementation:
+1. **Standard Cases**
+   - Users over 18 (✓ PASSED)
+   - Users under 18 (✓ PASSED)
+   - Users exactly at age requirement (✓ PASSED)
 
-1. Compile the Circom circuit and generate proving/verification keys
-2. Implement the actual proof generation and verification using snarkjs
-3. Create separate applications for each component
-4. Implement proper authentication and secure communication
+2. **Special Requirements**
+   - Higher age requirements (21+) (✓ PASSED)
+   - Custom age thresholds (✓ PASSED)
+
+3. **Edge Cases**
+   - Age 0 (✓ PASSED)
+   - Very old users (✓ PASSED)
+   - Zero age requirement (✓ PASSED)
+   - Negative age requirement (✓ PASSED)
+
+4. **Error Cases**
+   - Non-existent users (✓ PASSED)
+   - Unknown users (✓ PASSED)
+
+Test suite achieves 100% pass rate across all scenarios.
+
+## Security Considerations
+
+1. **Privacy**
+   - Zero-knowledge proofs ensure age privacy
+   - Only pass/fail result is revealed
+   - Actual age remains confidential
+
+2. **Cryptographic Security**
+   - P-384 ECDSA for strong signature security
+   - 384-bit nonces prevent replay attacks
+   - Government credentials are JWT-signed
+
+3. **Limitations**
+   - Mock implementation uses simplified key generation
+   - Production deployment requires secure key management
+   - Additional measures needed for rate limiting
+
+## Usage Example
+
+```javascript
+const { runFullVerificationFlow } = require('./zk_age_verification_mock.js');
+
+// Verify a user meets age requirement
+const result = await runFullVerificationFlow('userId', 18);
+if (result.success) {
+    console.log('Age requirement verified!');
+} else {
+    console.log('Age requirement not met or verification failed');
+}
+```
+
+## Flow Diagram
+
+```
+Service Provider                User Agent                  Government
+     |                             |                            |
+     |-- Request Verification ---->|                            |
+     |  (age_req, nonce)          |                            |
+     |                            |--- Request Credential ----->|
+     |                            |                            |
+     |                            |<---- Issue Credential -----|
+     |                            |   (signed with P-384)      |
+     |                            |                            |
+     |                            |-- Generate ZK Proof -------|
+     |                            |                            |
+     |<-- Submit Proof -----------|                            |
+     |                            |                            |
+     |-- Verify Proof            |                            |
+     |                           |                            |

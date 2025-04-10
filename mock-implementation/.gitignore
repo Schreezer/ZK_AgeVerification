@@ -1,0 +1,5 @@
+# Ignore circuit build artifacts
+circuit_build/
+*.r1cs
+*.sym
+*.wasm
