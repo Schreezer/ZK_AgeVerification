@@ -1,0 +1,8 @@
+node_modules/
+*.ptau
+proving_key.bin
+mock-implementation/circuit_build/*.r1cs
+mock-implementation/circuit_build/*.sym
+mock-implementation/circuit_build/*.wasm
+mock-implementation/circuit_build/*.zkey
+*.zip
