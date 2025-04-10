@@ -1,0 +1,6 @@
+circuit_build/*.r1cs
+circuit_build/*.sym
+circuit_build/*.wasm
+circuit_build/*.zkey
+*.zip
+ptau/
