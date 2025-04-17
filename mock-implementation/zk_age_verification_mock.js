@@ -14,8 +14,8 @@ const crypto = require('crypto');
 
 // Constants
 const GOVERNMENT_SECRET_KEY = 'government-secret-key'; // In a real system, this would be securely stored
-const CIRCUIT_WASM_PATH = './age_verification_js/age_verification.wasm'; // Will be generated from the circuit
-const CIRCUIT_ZKEY_PATH = './age_verification_js/age_verification_final.zkey'; // Will be generated from the circuit
+const CIRCUIT_WASM_PATH = './age_verification_js/age_verification_js/age_verification.wasm'; // Will be generated from the circuit
+const CIRCUIT_ZKEY_PATH = './age_verification_js/age_verification.zkey'; // Updated to match newly generated zkey
 
 // P-384 Parameters (mock values for demonstration)
 const P384_MOCK = {
@@ -78,7 +78,12 @@ function mockServiceProviderRequest(customAgeRequirement = null) {
   });
 
   // Set the age requirement
-  const ageRequirement = customAgeRequirement !== null ? customAgeRequirement : 18;
+  let ageRequirement = customAgeRequirement !== null ? customAgeRequirement : 18;
+  // Clamp negative age requirement
+  if (ageRequirement < 0) {
+    console.warn('Service Provider: Negative age requirement received, defaulting to 0');
+    ageRequirement = 0;
+  }
 
   console.log(`Service Provider: Generated nonce and age requirement ${ageRequirement}`);
   return { nonce, ageRequirement };
@@ -104,18 +109,118 @@ function mockGovernmentCredentialIssuer(userId) {
     issuedAt: Date.now()
   };
 
-  // Generate mock P-384 signature
+  // Use real ECDSA P-384 signature
   const message = JSON.stringify(credentialData);
-  const signature = generateMockP384Signature(message);
 
-  // Create the full credential
+  // Key file paths
+  const privKeyPath = __dirname + '/p384-private.pem';
+  const pubKeyPath = __dirname + '/p384-public.pem';
+
+  // Ensure keypair exists (generate if not)
+  let privateKeyPem, publicKeyPem;
+  if (fs.existsSync(privKeyPath) && fs.existsSync(pubKeyPath)) {
+    privateKeyPem = fs.readFileSync(privKeyPath, 'utf8');
+    publicKeyPem = fs.readFileSync(pubKeyPath, 'utf8');
+  } else {
+    const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', {
+      namedCurve: 'P-384',
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+    });
+    fs.writeFileSync(privKeyPath, privateKey);
+    fs.writeFileSync(pubKeyPath, publicKey);
+    privateKeyPem = privateKey;
+    publicKeyPem = publicKey;
+  }
+
+  // Hash the message with SHA-384
+  const hash = crypto.createHash('sha384').update(message).digest();
+
+  // Sign the hash with ECDSA P-384
+  const sign = crypto.createSign('SHA384');
+  sign.update(message);
+  sign.end();
+  const derSignature = sign.sign(privateKeyPem);
+
+  // Parse DER signature to get r and s
+  function parseEcdsaDerSignature(der) {
+    // Minimal ASN.1 DER parser for ECDSA signature
+    let offset = 0;
+    if (der[offset++] !== 0x30) throw new Error('Invalid DER');
+    const seqLen = der[offset++];
+    if (der[offset++] !== 0x02) throw new Error('Invalid DER');
+    const rLen = der[offset++];
+    let r = der.slice(offset, offset + rLen); offset += rLen;
+    if (der[offset++] !== 0x02) throw new Error('Invalid DER');
+    const sLen = der[offset++];
+    let s = der.slice(offset, offset + sLen);
+    // Remove leading zeros
+    if (r[0] === 0x00) r = r.slice(1);
+    if (s[0] === 0x00) s = s.slice(1);
+    return {
+      r: BigInt('0x' + r.toString('hex')),
+      s: BigInt('0x' + s.toString('hex'))
+    };
+  }
+  const { r, s } = parseEcdsaDerSignature(derSignature);
+
+  // Split BigInt into 8 limbs of 48 bits each
+  function splitToLimbs(bn) {
+    const limbs = [];
+    let n = bn;
+    const mask = (1n << 48n) - 1n;
+    for (let i = 0; i < 8; i++) {
+      limbs.unshift((n & mask).toString());
+      n >>= 48n;
+    }
+    return limbs;
+  }
+
+  // Split hash into 8 limbs (as in mock)
+  function splitHashToLimbs(buf) {
+    const limbs = [];
+    for (let i = 0; i < 8; i++) {
+      const start = i * 6;
+      const slice = buf.slice(start, start + 6);
+      const padded = Buffer.concat([slice, Buffer.alloc(6 - slice.length)]);
+      limbs.push(BigInt('0x' + padded.toString('hex')).toString());
+    }
+    return limbs;
+  }
+
+  // Extract public key coordinates (x, y) as limbs
+  function getPublicKeyLimbs(pem) {
+    const pubKeyObj = crypto.createPublicKey(pem);
+    const spki = pubKeyObj.export({ type: 'spki', format: 'der' });
+    // P-384 uncompressed point is last 97 bytes: 0x04 || x(48) || y(48)
+    const uncompressed = spki.slice(-97);
+    if (uncompressed[0] !== 0x04) throw new Error('Invalid uncompressed point');
+    const x = uncompressed.slice(1, 49);
+    const y = uncompressed.slice(49, 97);
+    function bufToLimbs(buf) {
+      const limbs = [];
+      for (let i = 0; i < 8; i++) {
+        const start = i * 6;
+        const slice = buf.slice(start, start + 6);
+        const padded = Buffer.concat([slice, Buffer.alloc(6 - slice.length)]);
+        limbs.push(BigInt('0x' + padded.toString('hex')).toString());
+      }
+      return limbs;
+    }
+    return {
+      x: bufToLimbs(x),
+      y: bufToLimbs(y)
+    };
+  }
+
   const credential = {
     ...credentialData,
     signature: {
-      r: signature.r.map(n => n.toString()),
-      s: signature.s.map(n => n.toString()),
-      msgHash: signature.msgHash.map(n => n.toString())
-    }
+      r: splitToLimbs(r),
+      s: splitToLimbs(s),
+      msgHash: splitHashToLimbs(hash)
+    },
+    publicKey: getPublicKeyLimbs(publicKeyPem)
   };
 
   // Sign the full credential with JWT for transport
@@ -137,57 +242,19 @@ async function mockUserAgentProofGenerator(signedCredential, nonce, ageRequireme
 
     // Prepare inputs for the ZK circuit
     const circuitInputs = {
-      // Public inputs
       ageRequirement,
-      nonce: nonce.map(n => n.toString()),
-      govtPubKey: [
-        P384_MOCK.publicKey.x.map(n => n.toString()),
-        P384_MOCK.publicKey.y.map(n => n.toString())
-      ],
-      
-      // Private inputs
       userAge: credential.age,
-      credentialHash: credential.signature.msgHash,
-      signatureR: credential.signature.r,
-      signatureS: credential.signature.s
+      isVerified: credential.age >= ageRequirement ? 1 : 0,
     };
 
     console.log('User Agent: Preparing inputs for ZK proof');
 
-    // In a real implementation, we would use snarkjs to generate the proof
-    // For this mock, we'll create a simulated proof structure
-    
-    // Create deterministic but obfuscated values based on the inputs
-    const hashInputs = crypto.createHash('sha384')
-      .update(JSON.stringify(circuitInputs))
-      .digest('hex');
-
-    // Split the hash into parts to simulate proof components
-    const proofParts = [];
-    for (let i = 0; i < hashInputs.length; i += 16) {
-      proofParts.push(hashInputs.slice(i, i + 16));
-    }
-
-    // Create a proof structure similar to a P-384 proof
-    const proof = {
-      pi_a: [proofParts[0], proofParts[1], "1"],
-      pi_b: [[proofParts[2], proofParts[3]], [proofParts[4], proofParts[5]], ["1", "0"]],
-      pi_c: [proofParts[6], proofParts[7], "1"],
-      protocol: "groth16"
-    };
-
-    // The public signals include the public inputs
-    const publicSignals = [
-      ageRequirement.toString(),
-      ...nonce.map(n => n.toString()),
-      ...P384_MOCK.publicKey.x.map(n => n.toString()),
-      ...P384_MOCK.publicKey.y.map(n => n.toString()),
-      // Last signal is the verification result
-      credential.age >= ageRequirement ? "1" : "0"
-    ];
-
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+      circuitInputs,
+      CIRCUIT_WASM_PATH,
+      CIRCUIT_ZKEY_PATH
+    );
     console.log('User Agent: Generated ZK proof');
-
     return {
       proof,
       publicSignals,
@@ -209,42 +276,30 @@ async function mockServiceProviderVerifier(proof, publicSignals, nonce, ageRequi
   console.log('Service Provider: Verifying ZK proof');
 
   try {
-    // Extract components from public signals
-    const receivedAgeReq = BigInt(publicSignals[0]);
-    const receivedNonce = publicSignals.slice(1, 9).map(n => BigInt(n));
-    const receivedResult = publicSignals[publicSignals.length - 1] === "1";
+    // Load verification key (assumes verification_key.json is present)
+    const vkeyPath = './age_verification_js/verification_key.json';
+    const vkey = JSON.parse(fs.readFileSync(vkeyPath, 'utf8'));
 
-    // Verify public inputs match
-    const isAgeRequirementValid = receivedAgeReq === BigInt(ageRequirement);
-    const isNonceValid = receivedNonce.every((n, i) => n === nonce[i]);
-    
-    // Verify proof structure
-    const isProofStructureValid =
-      proof &&
-      proof.pi_a?.length === 3 &&
-      proof.pi_b?.length === 3 &&
-      proof.pi_b[0]?.length === 2 &&
-      proof.pi_c?.length === 3 &&
-      proof.protocol === "groth16";
-
-    // In a real implementation, we would verify the actual P-384 proof
-    // Here we're just checking the structure and public inputs
-    const verificationResult = 
-      isProofStructureValid && 
-      isAgeRequirementValid && 
-      isNonceValid && 
-      receivedResult;
-
-    if (verificationResult) {
-      console.log('Service Provider: Verification successful - User meets age requirement');
-    } else {
-      console.log('Service Provider: Verification failed');
-      if (!isAgeRequirementValid) console.log('  - Age requirement mismatch');
-      if (!isNonceValid) console.log('  - Nonce mismatch');
-      if (!isProofStructureValid) console.log('  - Invalid proof structure');
+    // Verify SNARK proof correctness
+    let proofValid = false;
+    try {
+      proofValid = await snarkjs.groth16.verify(vkey, publicSignals, proof);
+    } catch (e) {
+      console.error('Service Provider: Error during SNARK verification', e);
+      return false;
     }
-
-    return verificationResult;
+    // Check circuit output (last public signal) for age requirement
+    const meetsRequirement = publicSignals[publicSignals.length - 1] === '1';
+    if (!proofValid) {
+      console.log('Service Provider: Proof verification failed');
+      return false;
+    }
+    if (!meetsRequirement) {
+      console.log('Service Provider: Proof valid but user does NOT meet age requirement');
+      return false;
+    }
+    console.log('Service Provider: Verification successful - User meets age requirement');
+    return true;
   } catch (error) {
     console.error('Service Provider: Error verifying proof', error);
     return false;
@@ -293,13 +348,6 @@ async function runFullVerificationFlow(userId, customAgeRequirement = null) {
   };
 }
 
-// Only run tests if directly executed
-if (require.main === module) {
-  // Import test function
-  const runTests = require('./zk_age_verification_tests.js');
-  runTests().catch(console.error);
-}
-
 module.exports = {
   mockServiceProviderRequest,
   mockGovernmentCredentialIssuer,
@@ -307,3 +355,9 @@ module.exports = {
   mockServiceProviderVerifier,
   runFullVerificationFlow
 };
+
+// Only run tests if directly executed
+if (require.main === module) {
+  const runTests = require('./zk_age_verification_tests.js');
+  runTests().catch(console.error);
+}

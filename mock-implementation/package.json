@@ -17,6 +17,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@crema-labs/ecdsa-p384-circom": "^0.0.1",
     "circomlib": "latest",
     "elliptic": "^6.6.1",
     "jsonwebtoken": "^9.0.2",
