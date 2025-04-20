@@ -1,1 +1,3 @@
 # ZK_AgeVerification
+
+WITHOUT ECDSA OR EDDSA

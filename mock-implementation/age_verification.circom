@@ -1,22 +1,101 @@
 pragma circom 2.0.0;
 
+// Import required circomlib components
 include "node_modules/circomlib/circuits/comparators.circom";
+include "node_modules/circomlib/circuits/eddsa.circom";
+include "node_modules/circomlib/circuits/eddsamimc.circom";
+include "node_modules/circomlib/circuits/bitify.circom";
+include "node_modules/circomlib/circuits/mimc.circom";
+include "node_modules/circomlib/circuits/pointbits.circom";
 
-// Age verification: ensure userAge meets the requirement
-template AgeVerification() {
+// Age verification with EdDSA: verify signature and ensure userAge meets requirement
+// This is an optimized version to reduce circuit complexity
+template AgeVerificationWithEdDSA() {
     // Public input: age requirement
     signal input ageRequirement;
-    // Private input: user's age
-    signal input userAge;
-    // Input: 1 if userAge >= ageRequirement, else 0
-    signal input isVerified;
 
+    // Private inputs
+    signal input userAge;
+
+    // EdDSA signature components
+    signal input A[256];  // Public key bits
+    signal input R8[256]; // Signature component R8
+    signal input S[256];  // Signature component S
+    signal input msg[32]; // Message bits (age encoded in 32 bits is sufficient)
+
+    // Output signal
+    signal output isVerified;
+
+    // Prepare the message for EdDSA verification
+    // Convert 32-bit message to 256-bit for EdDSA
+    signal fullMsg[256];
+    for (var i = 0; i < 32; i++) {
+        fullMsg[i] <== msg[i];
+    }
+    for (var i = 32; i < 256; i++) {
+        fullMsg[i] <== 0;
+    }
+
+    // Create MiMC hash component for EdDSA
+    component mimc = MiMC7(91);
+    var msgBits = 32; // We're using 32 bits for the age
+
+    // Convert bit array to field elements for MiMC
+    component bits2num = Bits2Num(msgBits);
+    for (var i = 0; i < msgBits; i++) {
+        bits2num.in[i] <== msg[i];
+    }
+
+    // Use the numeric value as input to MiMC
+    mimc.x_in <== bits2num.out;
+    mimc.k <== 0;
+
+    // Verify EdDSA signature using the MiMC hash
+    component eddsaVerifier = EdDSAMiMCVerifier();
+
+    // Enable the verifier
+    eddsaVerifier.enabled <== 1;
+
+    // Convert bit arrays to field elements for the verifier
+    component bits2pointA = Bits2Point();
+    for (var i = 0; i < 256; i++) {
+        bits2pointA.in[i] <== A[i];
+    }
+
+    // Convert R8 bits to point
+    component bits2pointR = Bits2Point();
+    for (var i = 0; i < 256; i++) {
+        bits2pointR.in[i] <== R8[i];
+    }
+
+    // Convert S bits to field element
+    component bits2S = Bits2Num(256);
+    for (var i = 0; i < 256; i++) {
+        bits2S.in[i] <== S[i];
+    }
+
+    // Connect the components to the verifier
+    eddsaVerifier.Ax <== bits2pointA.out[0];
+    eddsaVerifier.Ay <== bits2pointA.out[1];
+    eddsaVerifier.R8x <== bits2pointR.out[0];
+    eddsaVerifier.R8y <== bits2pointR.out[1];
+    eddsaVerifier.S <== bits2S.out;
+    eddsaVerifier.M <== mimc.out;
+
+    // Note: We've already connected the signature components above
+    // No need to connect A, R8, and S arrays directly as the EdDSAMiMCVerifier
+    // expects field elements, not bit arrays
+
+    // Verify age requirement
     component ge = GreaterEqThan(32);
     ge.in[0] <== userAge;
     ge.in[1] <== ageRequirement;
-    // Assert computed output equals provided isVerified
-    assert(ge.out == isVerified);
+
+    // The EdDSAMiMCVerifier doesn't have an output signal for validity
+    // It will constrain the circuit to be valid if the signature is valid
+    // So we only need to check the age requirement
+    isVerified <== ge.out;
 }
 
-// Public signals: ageRequirement and comparator result
-component main { public [ageRequirement, isVerified] } = AgeVerification();
+// Public signals: ageRequirement and verification result
+component main { public [ageRequirement] } = AgeVerificationWithEdDSA();

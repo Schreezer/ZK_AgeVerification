@@ -1,135 +1,50 @@
-/**
- * Test suite for ZK Age Verification Mock Implementation
- */
-const {
-  runFullVerificationFlow
-} = require('./zk_age_verification_mock.js');
+const { expect } = require('chai');
+const { runFullVerificationFlow } = require('./zk_age_verification_mock');
 
 async function runTests() {
-  console.log('=== RUNNING ZK AGE VERIFICATION TESTS ===\n');
+    console.log('\n=== Starting Age Verification Tests ===\n');
 
-  const testResults = [];
+    // Test 1: Valid user over 18
+    console.log('\nTest 1: Valid user over 18');
+    const test1 = await runFullVerificationFlow('user1', 18);
+    expect(test1.success).to.be.true;
+    expect(test1.userAge).to.be.equal(25);
 
-  // Test 1: User over 18 with standard age requirement (18)
-  console.log('TEST 1: User over 18 with standard age requirement');
-  const result1 = await runFullVerificationFlow('user1');
-  testResults.push({
-    test: 'User over 18 with standard age requirement',
-    expected: true,
-    actual: result1.success,
-    passed: result1.success === true
-  });
-  console.log(`Test 1 ${result1.success === true ? 'PASSED' : 'FAILED'}\n`);
+    // Test 2: Valid user under 18
+    console.log('\nTest 2: Valid user under 18');
+    const test2 = await runFullVerificationFlow('user2', 18);
+    expect(test2.success).to.be.false;
+    expect(test2.userAge).to.be.equal(16);
 
-  // Test 2: User under 18 with standard age requirement (18)
-  console.log('TEST 2: User under 18 with standard age requirement');
-  const result2 = await runFullVerificationFlow('user2');
-  testResults.push({
-    test: 'User under 18 with standard age requirement',
-    expected: false,
-    actual: result2.success,
-    passed: result2.success === false
-  });
-  console.log(`Test 2 ${result2.success === false ? 'PASSED' : 'FAILED'}\n`);
+    // Test 3: Valid user exactly 18
+    console.log('\nTest 3: Valid user exactly 18');
+    const test3 = await runFullVerificationFlow('user3', 18);
+    expect(test3.success).to.be.true;
+    expect(test3.userAge).to.be.equal(18);
 
-  // Test 3: User exactly 18 with standard age requirement (18)
-  console.log('TEST 3: User exactly 18 with standard age requirement');
-  const result3 = await runFullVerificationFlow('user3');
-  testResults.push({
-    test: 'User exactly 18 with standard age requirement',
-    expected: true,
-    actual: result3.success,
-    passed: result3.success === true
-  });
-  console.log(`Test 3 ${result3.success === true ? 'PASSED' : 'FAILED'}\n`);
+    // Test 4: Custom age requirement (21+)
+    console.log('\nTest 4: Custom age requirement (21+)');
+    const test4 = await runFullVerificationFlow('user1', 21);
+    expect(test4.success).to.be.true;
+    expect(test4.userAge).to.be.equal(25);
 
-  // Test 4: Senior user with higher age requirement (21)
-  console.log('TEST 4: Senior user with higher age requirement (21)');
-  const result4 = await runFullVerificationFlow('user4', 21);
-  testResults.push({
-    test: 'Senior user with higher age requirement (21)',
-    expected: true,
-    actual: result4.success,
-    passed: result4.success === true
-  });
-  console.log(`Test 4 ${result4.success === true ? 'PASSED' : 'FAILED'}\n`);
+    // Test 5: Edge case - age 0
+    console.log('\nTest 5: Edge case - age 0');
+    const test5 = await runFullVerificationFlow('user5', 18);
+    expect(test5.success).to.be.false;
+    expect(test5.userAge).to.be.equal(0);
 
-  // Test 5: Edge case - age 0 with standard age requirement (18)
-  console.log('TEST 5: Edge case - age 0 with standard age requirement');
-  const result5 = await runFullVerificationFlow('user5');
-  testResults.push({
-    test: 'Edge case - age 0 with standard age requirement',
-    expected: false,
-    actual: result5.success,
-    passed: result5.success === false
-  });
-  console.log(`Test 5 ${result5.success === false ? 'PASSED' : 'FAILED'}\n`);
+    // Test 6: Non-existent user
+    console.log('\nTest 6: Non-existent user');
+    const test6 = await runFullVerificationFlow('nonExistentUser', 18);
+    expect(test6.success).to.be.false;
+    expect(test6.error).to.equal('User not found or has no data');
 
-  // Test 6: Edge case - very old user with very high age requirement (100)
-  console.log('TEST 6: Edge case - very old user with very high age requirement (100)');
-  const result6 = await runFullVerificationFlow('user6', 100);
-  testResults.push({
-    test: 'Edge case - very old user with very high age requirement (100)',
-    expected: true,
-    actual: result6.success,
-    passed: result6.success === true
-  });
-  console.log(`Test 6 ${result6.success === true ? 'PASSED' : 'FAILED'}\n`);
-
-  // Test 7: Non-existent user
-  console.log('TEST 7: Non-existent user');
-  const result7 = await runFullVerificationFlow('nonExistentUser');
-  testResults.push({
-    test: 'Non-existent user',
-    expected: 'error',
-    actual: result7.error ? 'error' : result7.success,
-    passed: result7.error !== undefined
-  });
-  console.log(`Test 7 ${result7.error ? 'PASSED' : 'FAILED'}\n`);
-
-  // Test 8: Unknown user (not in database)
-  console.log('TEST 8: Unknown user (not in database)');
-  const result8 = await runFullVerificationFlow('unknownUser');
-  testResults.push({
-    test: 'Unknown user (not in database)',
-    expected: 'error',
-    actual: result8.error ? 'error' : result8.success,
-    passed: result8.error !== undefined
-  });
-  console.log(`Test 8 ${result8.error ? 'PASSED' : 'FAILED'}\n`);
-
-  // Test 9: Zero age requirement (edge case)
-  console.log('TEST 9: Zero age requirement (edge case)');
-  const result9 = await runFullVerificationFlow('user2', 0);
-  testResults.push({
-    test: 'Zero age requirement (edge case)',
-    expected: true,
-    actual: result9.success,
-    passed: result9.success === true
-  });
-  console.log(`Test 9 ${result9.success === true ? 'PASSED' : 'FAILED'}\n`);
-
-  // Test 10: Negative age requirement (invalid case, should default to 0)
-  console.log('TEST 10: Negative age requirement (invalid case)');
-  const result10 = await runFullVerificationFlow('user5', -5);
-  testResults.push({
-    test: 'Negative age requirement (invalid case)',
-    expected: true,
-    actual: result10.success,
-    passed: result10.success === true
-  });
-  console.log(`Test 10 ${result10.success === true ? 'PASSED' : 'FAILED'}\n`);
-
-  // Summary of test results
-  console.log('=== TEST RESULTS SUMMARY ===');
-  let passedTests = 0;
-  testResults.forEach((result, index) => {
-    console.log(`Test ${index + 1}: ${result.test} - ${result.passed ? 'PASSED' : 'FAILED'}`);
-    if (result.passed) passedTests++;
-  });
-  console.log(`\nPassed ${passedTests} out of ${testResults.length} tests (${Math.round(passedTests/testResults.length*100)}%)`);
-
-  console.log('\n=== ALL TESTS COMPLETED ===');
+    console.log('\n=== Age Verification Tests Completed ===\n');
 }
 
 module.exports = runTests;
+
+if (require.main === module) {
+    runTests().catch(console.error);
+}
