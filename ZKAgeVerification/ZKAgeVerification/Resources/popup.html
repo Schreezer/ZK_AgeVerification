@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js"></script>
+  <title>ZK Age Verification</title>
+</head>
+<body>
+  <div class="container">
+    <h1>ZK Age Verification</h1>
+    
+    <div id="no-credential" class="section">
+      <p>No age credential stored.</p>
+      <p class="info">Visit the Government Identity Portal to obtain a credential.</p>
+    </div>
+    
+    <div id="has-credential" class="section hidden">
+      <div class="credential-card">
+        <h2>Age Credential</h2>
+        <div class="credential-info">
+          <div class="info-row">
+            <span class="label">Name:</span>
+            <span id="credential-name" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">User ID:</span>
+            <span id="credential-userId" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Age:</span>
+            <span id="credential-age" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Issued:</span>
+            <span id="credential-issued" class="value">-</span>
+          </div>
+        </div>
+      </div>
+      <button id="clear-credential">Clear Credential</button>
+    </div>
+    
+    <div class="footer">
+      <p>Zero-Knowledge Age Verification</p>
+      <p class="version">v1.0</p>
+    </div>
+  </div>
+</body>
+</html>

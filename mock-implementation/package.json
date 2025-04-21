@@ -6,9 +6,13 @@
   "scripts": {
     "test": "mocha zk_age_verification_tests.js",
     "compile:circuit": "circom age_verification.circom --r1cs --wasm --sym --c",
+    "compile:simple": "circom simple_age_verification.circom --r1cs --wasm --sym --c",
     "setup:circuit": "snarkjs plonk setup age_verification.r1cs ptau/powersOfTau28_hez_final_16.ptau age_verification.zkey",
+    "setup:simple": "snarkjs groth16 setup simple_age_verification.r1cs ptau/pot14_final.ptau simple_age_verification.zkey",
     "generate:vkey": "snarkjs zkey export verificationkey age_verification.zkey verification_key.json",
-    "setup:all": "npm run compile:circuit && npm run setup:circuit && npm run generate:vkey"
+    "generate:simple-vkey": "snarkjs zkey export verificationkey simple_age_verification.zkey simple_age_verification_verification_key.json",
+    "setup:all": "npm run compile:circuit && npm run setup:circuit && npm run generate:vkey",
+    "setup:simple-all": "npm run compile:simple && npm run setup:simple && npm run generate:simple-vkey"
   },
   "dependencies": {
     "blake-hash": "^2.0.0",

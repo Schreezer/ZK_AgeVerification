@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Government Identity Portal</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Government Identity Portal</h1>
+      <p>Official credential issuance service</p>
+    </header>
+
+    <main>
+      <div id="login-section">
+        <h2>Authenticate to Receive Credentials</h2>
+        <p>Please log in to receive your age verification credential.</p>
+
+        <div class="form-container">
+          <form id="login-form">
+            <div class="form-group">
+              <label for="userId">User ID:</label>
+              <input type="text" id="userId" name="userId" required>
+              <small>Try user1, user2, user3, etc.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password:</label>
+              <input type="password" id="password" name="password" required>
+              <small>Any password will work for this demo</small>
+            </div>
+
+            <button type="submit" class="btn primary-btn">Log In</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="credential-section" class="hidden">
+        <h2>Your Identity Credential</h2>
+        <div class="credential-container">
+          <div class="credential-card">
+            <div class="credential-header">
+              <img src="https://via.placeholder.com/100x100?text=Gov+Seal" alt="Government Seal" class="credential-seal">
+              <h3>Official Age Credential</h3>
+            </div>
+
+            <div class="credential-body">
+              <p><strong>Name:</strong> <span id="credential-name">-</span></p>
+              <p><strong>User ID:</strong> <span id="credential-userId">-</span></p>
+              <p><strong>Age:</strong> <span id="credential-age">-</span></p>
+              <p><strong>Issued:</strong> <span id="credential-issued">-</span></p>
+            </div>
+
+            <div class="credential-footer">
+              <p>This credential is digitally signed and can be used for age verification.</p>
+              <button id="send-to-extension-btn" class="btn secondary-btn">Send to Extension</button>
+              <!-- Hidden element to store credential data for the extension -->
+              <div id="credential-data" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2023 Government Identity Authority. All rights reserved.</p>
+      <p>This is a demo of zero-knowledge age verification.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

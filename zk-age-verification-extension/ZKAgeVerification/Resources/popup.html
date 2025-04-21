@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZK Age Verification</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      width: 320px;
+      padding: 16px;
+      margin: 0;
+    }
+    
+    h1 {
+      font-size: 18px;
+      color: #333;
+      margin-top: 0;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background-color: #f9f9f9;
+    }
+    
+    .card-title {
+      font-weight: 600;
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: #1a5276;
+    }
+    
+    .credential-info {
+      display: none;
+    }
+    
+    .credential-info.active {
+      display: block;
+    }
+    
+    .credential-item {
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .credential-label {
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .credential-value {
+      font-weight: 600;
+    }
+    
+    .status {
+      padding: 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      text-align: center;
+    }
+    
+    .status-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status-error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    button {
+      background-color: #1a5276;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #154360;
+    }
+    
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>ZK Age Verification</h1>
+  
+  <div class="container">
+    <div class="card">
+      <h2 class="card-title">Status</h2>
+      <div id="status" class="status status-info">No credential loaded</div>
+    </div>
+    
+    <div id="credential-card" class="card credential-info">
+      <h2 class="card-title">Current Credential</h2>
+      <div class="credential-item">
+        <span class="credential-label">Name:</span>
+        <span id="credential-name" class="credential-value">-</span>
+      </div>
+      <div class="credential-item">
+        <span class="credential-label">User ID:</span>
+        <span id="credential-userId" class="credential-value">-</span>
+      </div>
+      <div class="credential-item">
+        <span class="credential-label">Age:</span>
+        <span id="credential-age" class="credential-value">-</span>
+      </div>
+      <div class="credential-item">
+        <span class="credential-label">Issued:</span>
+        <span id="credential-issued" class="credential-value">-</span>
+      </div>
+    </div>
+    
+    <button id="clear-credential" disabled>Clear Credential</button>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "ZK Age Verification",
+  "version": "1.0",
+  "description": "Zero-knowledge age verification extension",
+  "icons": {
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "images/icon-48.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3000/*", "http://localhost:3001/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://localhost:3002/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["snarkjs.min.js", "*.wasm", "*.zkey"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

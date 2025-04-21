@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EuroGram - The EU's Social Network</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-star-of-life eu-star"></i>
+        <h1>EuroGram</h1>
+      </div>
+      <p>The EU's Most Compliant Social Network</p>
+    </header>
+
+    <main>
+      <div id="verification-section">
+        <div class="eu-banner">
+          <div class="eu-flag">
+            <div class="stars">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+            </div>
+          </div>
+          <h2>Age Verification Required</h2>
+        </div>
+
+        <div class="gdpr-notice">
+          <i class="fas fa-shield-alt"></i>
+          <p>In compliance with EU Regulation 2016/679 (GDPR) and the Digital Services Act, we respect your privacy while still needing to verify your age.</p>
+        </div>
+
+        <p class="verification-text">To access EuroGram's content, please verify that you are at least <span id="age-requirement">16</span> years old.</p>
+        <p class="privacy-text">Your privacy is important to us. Our revolutionary zero-knowledge proof system verifies your age without revealing your actual age or any personal information. Not even to us!</p>
+
+        <div class="verification-box">
+          <button id="verify-age-btn" class="btn primary-btn"><i class="fas fa-check-circle"></i> Verify My Age</button>
+          <div id="verification-status" class="status-box hidden"></div>
+        </div>
+      </div>
+
+      <div id="content-section" class="hidden">
+        <div class="feed-header">
+          <h2><i class="fas fa-stream"></i> Your EuroGram Feed</h2>
+          <div class="feed-controls">
+            <button class="btn secondary-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button class="btn secondary-btn"><i class="fas fa-filter"></i> Filter</button>
+          </div>
+        </div>
+
+        <div class="content-box">
+          <div class="post">
+            <div class="post-header">
+              <img src="https://randomuser.me/api/portraits/women/42.jpg" alt="User Avatar" class="avatar">
+              <div class="post-info">
+                <h3>Ursula von der Leyen</h3>
+                <span class="post-time">Just now · <i class="fas fa-globe-europe"></i></span>
+              </div>
+            </div>
+            <div class="post-content">
+              <p>Big news! We've just passed a new regulation that requires 17 forms to be filled out before you can post a meme. It's for your own protection! 😊 #DigitalServicesAct #Compliance</p>
+              <img src="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="EU Parliament" class="post-image">
+            </div>
+            <div class="post-actions">
+              <button class="action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="action-btn"><i class="fas fa-comment"></i> Comment</button>
+              <button class="action-btn"><i class="fas fa-share"></i> Share</button>
+            </div>
+            <div class="post-stats">
+              <span><i class="fas fa-thumbs-up"></i> 27 Likes</span>
+              <span><i class="fas fa-comment"></i> 6 Comments</span>
+            </div>
+          </div>
+
+          <div class="post">
+            <div class="post-header">
+              <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Avatar" class="avatar">
+              <div class="post-info">
+                <h3>Emmanuel Macron</h3>
+                <span class="post-time">2 hours ago · <i class="fas fa-globe-europe"></i></span>
+              </div>
+            </div>
+            <div class="post-content">
+              <p>Just had a croissant while discussing how to standardize the shape of bananas across all member states. This is what European unity looks like! 🥐🍌 #EuropeanStandards</p>
+            </div>
+            <div class="post-actions">
+              <button class="action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="action-btn"><i class="fas fa-comment"></i> Comment</button>
+              <button class="action-btn"><i class="fas fa-share"></i> Share</button>
+            </div>
+            <div class="post-stats">
+              <span><i class="fas fa-thumbs-up"></i> 42 Likes</span>
+              <span><i class="fas fa-comment"></i> 12 Comments</span>
+            </div>
+          </div>
+
+          <div class="post">
+            <div class="post-header">
+              <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="User Avatar" class="avatar">
+              <div class="post-info">
+                <h3>Christine Lagarde</h3>
+                <span class="post-time">Yesterday · <i class="fas fa-globe-europe"></i></span>
+              </div>
+            </div>
+            <div class="post-content">
+              <p>Just printed another trillion euros. Don't worry, inflation is transitory... just like my patience for people who don't fill out their tax forms correctly! 💶💶💶 #ECB #MonetaryPolicy</p>
+              <img src="https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Euro Bills" class="post-image">
+            </div>
+            <div class="post-actions">
+              <button class="action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="action-btn"><i class="fas fa-comment"></i> Comment</button>
+              <button class="action-btn"><i class="fas fa-share"></i> Share</button>
+            </div>
+            <div class="post-stats">
+              <span><i class="fas fa-thumbs-up"></i> 189 Likes</span>
+              <span><i class="fas fa-comment"></i> 56 Comments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>EuroGram</h4>
+          <p>The social network that complies with all 27,394 EU regulations.</p>
+        </div>
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy (73 pages)</a></li>
+            <li><a href="#">Terms of Service (142 pages)</a></li>
+            <li><a href="#">Cookie Policy (38 pages)</a></li>
+            <li><a href="#">GDPR Compliance (219 pages)</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Contact</h4>
+          <p>Email our Data Protection Officer at: dpo@eurogram.eu</p>
+          <p>Response time: 6-8 weeks (as per regulation)</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2023 EuroGram. All rights reserved and thoroughly regulated.</p>
+        <p>This is a demo of zero-knowledge age verification. No actual EU regulations were harmed in the making of this page.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Add a hidden element to communicate with the extension -->
+  <div id="zk-extension-communication" style="display: none;" data-status="ready"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
