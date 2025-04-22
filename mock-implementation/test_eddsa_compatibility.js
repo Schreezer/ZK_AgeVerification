@@ -71,6 +71,12 @@ async function testEdDSACompatibility() {
             console.log('❌ Bit array lengths are incorrect');
         }
 
+        // Step 5: Test with a minimal circuit (if available)
+        console.log('\n5. Testing with updated circuit...');
+        console.log('To test with the actual circuit, run:');
+        console.log('1. node setup_eddsa_circuit.js');
+        console.log('2. node run_eddsa_demo.js');
+
         console.log('\n=== EdDSA Compatibility Test Completed ===');
         console.log('The circomlibjs library is now properly initialized and compatible with the implementation.');
         console.log('You can now proceed with the full ZK age verification flow.');

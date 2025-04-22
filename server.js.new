@@ -1,0 +1,105 @@
+/**
+ * Service Provider Backend
+ * 
+ * This server provides:
+ * 1. A static website that requires age verification
+ * 2. API endpoints for verifying ZK proofs
+ */
+
+const express = require('express');
+const path = require('path');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const fs = require('fs');
+const snarkjs = require('snarkjs');
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Constants
+const VERIFICATION_KEY_PATH = path.join(__dirname, '..', 'circuit-server', 'fixed_age_verification_verification_key.json');
+const FIXED_AGE_REQUIREMENT = 16; // Fixed age requirement for our implementation
+
+// Routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// API endpoint to initiate age verification
+app.post('/api/initiate-verification', (req, res) => {
+  console.log('Service Provider: Initiating age verification request');
+  
+  // We're using a fixed age requirement (16+)
+  console.log(`Service Provider: Using fixed age requirement: ${FIXED_AGE_REQUIREMENT}+`);
+  
+  res.json({ 
+    fixedAgeRequirement: FIXED_AGE_REQUIREMENT,
+    sessionId: Date.now().toString() // Simple session ID for demo purposes
+  });
+});
+
+// API endpoint to verify ZK proof
+app.post('/api/verify-proof', async (req, res) => {
+  console.log('Service Provider: Verifying ZK proof');
+  
+  const { proof, publicSignals } = req.body;
+  
+  if (!proof || !publicSignals) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+  
+  try {
+    // Check if verification key exists
+    if (!fs.existsSync(VERIFICATION_KEY_PATH)) {
+      throw new Error(`Verification key not found at ${VERIFICATION_KEY_PATH}`);
+    }
+    
+    // Load verification key
+    const vkey = JSON.parse(fs.readFileSync(VERIFICATION_KEY_PATH, 'utf8'));
+    
+    // Verify SNARK proof
+    let proofValid = false;
+    try {
+      proofValid = await snarkjs.groth16.verify(vkey, publicSignals, proof);
+      console.log('Is Verified:', proofValid);
+    } catch (e) {
+      console.error('Service Provider: Error during SNARK verification', e);
+      return res.status(500).json({ error: 'Error during proof verification' });
+    }
+    
+    // The public signals are:
+    // [0] - isVerified (1 if valid, 0 if invalid)
+    // [1] - governmentPublicKey
+    const isVerified = publicSignals[0] === '1';
+    
+    console.log('Public Signals:', publicSignals);
+    console.log('Is Verified:', isVerified);
+    
+    if (!proofValid) {
+      console.log('Service Provider: Proof verification failed');
+      return res.status(400).json({ success: false, message: 'Proof verification failed' });
+    }
+    
+    if (!isVerified) {
+      console.log('Service Provider: Proof valid but age requirement not met');
+      return res.status(403).json({ success: false, message: 'Age requirement not met' });
+    }
+    
+    console.log('Service Provider: Verification successful - Age requirement met');
+    return res.json({ success: true, message: 'Age verification successful' });
+    
+  } catch (error) {
+    console.error('Service Provider: Error verifying proof', error);
+    return res.status(500).json({ error: 'Error verifying proof' });
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Service Provider server running on http://localhost:${PORT}`);
+});

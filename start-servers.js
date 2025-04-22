@@ -36,6 +36,7 @@ function startServer(name, directory, command) {
 const serviceProvider = startServer('Service Provider', 'service-provider', 'start');
 const government = startServer('Government', 'government-backend', 'start');
 const circuitServer = startServer('Circuit Server', 'circuit-server', 'start');
+const proofServer = startServer('Proof Server', 'proof-server', 'start');
 
 // Handle process termination
 process.on('SIGINT', () => {
@@ -43,5 +44,13 @@ process.on('SIGINT', () => {
   serviceProvider.kill();
   government.kill();
   circuitServer.kill();
+  proofServer.kill();
   process.exit(0);
 });
+
+console.log('\nAll servers started. Press Ctrl+C to stop all servers.\n');
+console.log('Server URLs:');
+console.log('- Government Backend: http://localhost:3001');
+console.log('- Service Provider: http://localhost:3000');
+console.log('- Circuit Server: http://localhost:3002');
+console.log('- Proof Server: http://localhost:3003');

@@ -18,8 +18,8 @@ const path = require('path');
 const GOVERNMENT_SECRET_KEY = 'government-secret-key';
 
 // Use path.join for cross-platform compatibility
-const CIRCUIT_WASM_PATH = path.join(__dirname, 'age_verification_js', 'age_verification.wasm');
-const CIRCUIT_ZKEY_PATH = path.join(__dirname, 'age_verification.zkey');
+const CIRCUIT_WASM_PATH = path.join(__dirname, 'age_verification_js', 'age_verification_js', 'age_verification.wasm');
+const CIRCUIT_ZKEY_PATH = path.join(__dirname, 'age_verification_0000.zkey');
 const VERIFICATION_KEY_PATH = path.join(__dirname, 'verification_key.json');
 
 // Mock government EdDSA keypair (generate once and store)

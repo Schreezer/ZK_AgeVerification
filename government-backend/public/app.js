@@ -16,6 +16,11 @@ let serviceProviderData = null;
 
 // Initialize the application
 function init() {
+  // Clear localStorage to reset any cached credentials
+  console.log('Clearing localStorage cache...');
+  localStorage.clear();
+  console.log('Cache cleared successfully!');
+
   // Parse URL parameters (from service provider)
   const urlParams = new URLSearchParams(window.location.search);
   const sessionId = urlParams.get('sessionId');
@@ -49,6 +54,22 @@ function init() {
 
     // Decode the JWT to display the credential information
     const decodedCredential = parseJwt(currentCredential);
+
+    // Log detailed information about the credential
+    console.log('Decoded credential details:', {
+      hasSignature: 'signature' in decodedCredential,
+      signatureType: typeof decodedCredential.signature,
+      signatureValue: decodedCredential.signature ?
+        (typeof decodedCredential.signature === 'string' ?
+          decodedCredential.signature.substring(0, 20) + '...' :
+          (decodedCredential.signature.signature ?
+            decodedCredential.signature.signature.substring(0, 20) + '...' :
+            'complex signature object')) :
+        'undefined',
+      hasPublicKey: 'publicKey' in decodedCredential,
+      publicKeyType: typeof decodedCredential.publicKey,
+      publicKeyValue: decodedCredential.publicKey || 'undefined'
+    });
 
     // Update the credential display
     credentialName.textContent = decodedCredential.name;
@@ -104,6 +125,22 @@ async function handleLogin(event) {
 
     // Decode the JWT to display the credential information
     const decodedCredential = parseJwt(currentCredential);
+
+    // Log detailed information about the credential
+    console.log('Decoded credential details:', {
+      hasSignature: 'signature' in decodedCredential,
+      signatureType: typeof decodedCredential.signature,
+      signatureValue: decodedCredential.signature ?
+        (typeof decodedCredential.signature === 'string' ?
+          decodedCredential.signature.substring(0, 20) + '...' :
+          (decodedCredential.signature.signature ?
+            decodedCredential.signature.signature.substring(0, 20) + '...' :
+            'complex signature object')) :
+        'undefined',
+      hasPublicKey: 'publicKey' in decodedCredential,
+      publicKeyType: typeof decodedCredential.publicKey,
+      publicKeyValue: decodedCredential.publicKey || 'undefined'
+    });
 
     // Update the credential display
     credentialName.textContent = decodedCredential.name;
