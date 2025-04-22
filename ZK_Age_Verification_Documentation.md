@@ -2,11 +2,25 @@
 
 ## Table of Contents
 1. [System Overview](#system-overview)
+   - [Key Features](#key-features)
 2. [Architecture](#architecture)
+   - [Data Flow](#data-flow)
 3. [Components](#components)
+   - [Government Backend](#government-backend)
+   - [Chrome Extension](#chrome-extension)
+   - [Proof Server](#proof-server)
+   - [Service Provider](#service-provider)
 4. [Implementation Details](#implementation-details)
+   - [Cryptographic Primitives](#cryptographic-primitives)
+   - [Credential Format](#credential-format)
+   - [Proof Format](#proof-format)
 5. [Security Analysis](#security-analysis)
+   - [Security Properties](#security-properties)
+   - [Trust Assumptions](#trust-assumptions)
 6. [Potential Vulnerabilities](#potential-vulnerabilities)
+   - [Collusion Attacks](#collusion-attacks)
+   - [Implementation Vulnerabilities](#implementation-vulnerabilities)
+   - [User-Side Attacks](#user-side-attacks)
 7. [Future Improvements](#future-improvements)
 
 ## System Overview
