@@ -169,17 +169,6 @@ function triggerExtension() {
 
   observer.observe(commElement, { attributes: true });
 
-  // As a fallback, also try to directly open the government portal after a delay
-  // if the extension doesn't respond within 5 seconds
-  setTimeout(() => {
-    const verificationStatus = document.getElementById('verification-status');
-    if (verificationStatus && verificationStatus.textContent.includes('Waiting for browser extension')) {
-      console.log('Service Provider: Extension did not respond in time, opening government portal directly');
-      const governmentUrl = `http://localhost:3001?sessionId=${sessionId}&ageRequirement=${currentAgeRequirement}`;
-      window.open(governmentUrl, 'governmentWindow', 'width=800,height=600');
-    }
-  }, 5000);
-
   // Listen for messages from the extension
   window.addEventListener('message', handleExtensionMessage);
 }
@@ -245,14 +234,22 @@ async function verifyProof(proof, publicSignals) {
       }, 1500);
     } else {
       // Verification failed
-      updateStatus(`Verification failed: ${data.message}`, 'status-error');
+      updateStatus(`Verification failed: ${data.message}. Access denied.`, 'status-error');
       verifyAgeBtn.disabled = false;
+      
+      // Ensure content remains hidden on verification failure
+      verificationSection.classList.remove('hidden');
+      contentSection.classList.add('hidden');
     }
 
   } catch (error) {
     console.error('Error verifying proof:', error);
-    updateStatus('Error verifying proof. Please try again.', 'status-error');
+    updateStatus('Error verifying proof. Access denied.', 'status-error');
     verifyAgeBtn.disabled = false;
+    
+    // Ensure content remains hidden on verification failure
+    verificationSection.classList.remove('hidden');
+    contentSection.classList.add('hidden');
   }
 }
 
