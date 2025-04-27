@@ -209,7 +209,7 @@ As one article aptly states, zero-knowledge proofs allow users to keep their "tr
 
 -   **Summary of preliminary findings:** The implemented system successfully demonstrates the ZK age verification flow. Users can obtain a credential, generate a proof locally, and submit it to the service provider.
 -   **Interpretation of the processed data:** The service provider successfully verifies valid proofs generated using credentials from the mock government, confirming the user meets the age requirement (16+) without learning the actual age. The verification includes checking the SNARK proof itself and confirming the government public key embedded in the proof's public signals.
--   **Screenshots/visual results:** (Placeholder - Would include screenshots of the extension popup, government/service provider websites showing credential issuance and successful verification).
+
 
 ## 8. Analysis
 
@@ -228,7 +228,7 @@ As one article aptly states, zero-knowledge proofs allow users to keep their "tr
     -   **Benchmarking:** Conduct performance testing on various devices for proof generation and verification times.
     -   **UI/UX Improvements:** Enhance the Chrome extension interface for better usability.
 -   **New features, enhancements, or alternative strategies:** Consider using Decentralized Identifiers (DIDs) and Verifiable Credentials (VCs) standards alongside ZKPs for a more interoperable identity framework. Explore attribute encoding optimizations [7].
--   **Timeline for future improvements:** (Placeholder)
+
 
 ## 10. Conclusion
 
