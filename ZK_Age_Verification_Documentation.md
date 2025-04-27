@@ -1,306 +1,316 @@
-# Zero-Knowledge Age Verification System Documentation
+# ZK Age Verification Project Documentation
 
-## Table of Contents
-1. [System Overview](#system-overview)
-   - [Key Features](#key-features)
-2. [Architecture](#architecture)
-   - [Data Flow](#data-flow)
-3. [Components](#components)
-   - [Government Backend](#government-backend)
-   - [Chrome Extension](#chrome-extension)
-   - [Proof Server](#proof-server)
-   - [Service Provider](#service-provider)
-4. [Implementation Details](#implementation-details)
-   - [Cryptographic Primitives](#cryptographic-primitives)
-   - [Credential Format](#credential-format)
-   - [Proof Format](#proof-format)
-5. [Security Analysis](#security-analysis)
-   - [Security Properties](#security-properties)
-   - [Trust Assumptions](#trust-assumptions)
-6. [Potential Vulnerabilities](#potential-vulnerabilities)
-   - [Collusion Attacks](#collusion-attacks)
-   - [Implementation Vulnerabilities](#implementation-vulnerabilities)
-   - [User-Side Attacks](#user-side-attacks)
-7. [Future Improvements](#future-improvements)
+## 1. Executive Summary
 
-## System Overview
+-   **Brief overview:** This project implements a Zero-Knowledge (ZK) age verification system using zk-SNARKs (specifically Groth16) and Circom. It demonstrates how a user can prove they meet an age requirement (e.g., 16+) to a service provider without revealing their actual age, enhancing user privacy.
+-   **Key objectives:**
+    -   Implement a privacy-preserving age verification flow.
+    -   Simulate a government entity issuing signed age credentials.
+    -   Develop a local proof generation mechanism.
+    -   Create a service provider that verifies ZK proofs.
+    -   Integrate the flow using a Chrome extension simulation.
+-   **Expected outcomes:** A functional local demonstration showcasing the end-to-end ZK age verification process, allowing users to access age-restricted content privately.
+-   **Summary of methodology:** The system uses zk-SNARKs (Groth16) with circuits written in Circom. A simulated government backend issues Schnorr-signed credentials. A local proof server generates proofs using `snarkjs`. A service provider verifies these proofs against the government's public key and the circuit's verification key. A Chrome extension orchestrates the user-side interactions.
+-   **Estimated timeline:**
+    -   **Week 1:** Literature review, problem searching, review of existing implementations, deciding on the architecture.
+    -   **Week 2:** Mock implementation without credential verification.
+    -   **Week 3:** Added credential verification using Schnorr signatures.
+    -   **Week 4:** Full implementation combining different contributions.
 
-The Zero-Knowledge Age Verification System is a privacy-preserving solution that allows users to prove they meet age requirements (16+) to service providers without revealing their actual age or identity. The system uses zero-knowledge proofs and Schnorr signatures to ensure security, privacy, and authenticity.
+## 2. Introduction
 
-### Key Features
+-   **Background and context:** Traditional online age verification methods often compromise user privacy by requiring the disclosure of sensitive personal information like date of birth or identity documents. Zero-knowledge proofs (ZKPs) offer a cryptographic solution, allowing individuals to prove statements (like meeting an age threshold) without revealing the underlying data.
+-   **Problem statement:** Accessing age-restricted online content or services necessitates age verification, but current methods create significant privacy risks and potential for data misuse or tracking [10, 11]. There is a need for verification mechanisms that protect user privacy while fulfilling legal or service requirements.
+-   **Relevance and significance:** This project demonstrates a practical application of ZKPs to address the critical challenge of online privacy in age verification. By leveraging zk-SNARKs, it offers a blueprint for systems that allow users to maintain control over their personal data while interacting securely online [16].
+-   **Research questions:** How can zk-SNARKs and Schnorr signatures be effectively combined to create a secure and private age verification system? What are the practical considerations for implementing such a system involving credential issuance, local proof generation, and verification?
 
-- **Privacy-Preserving**: Service providers learn only that a user is over 16, not their actual age
-- **Cryptographically Secure**: Uses Schnorr signatures and zero-knowledge proofs
-- **Decentralized Verification**: Service providers can verify credentials without contacting the government
-- **Non-Transferable**: Credentials are bound to specific users
-- **Minimal Disclosure**: Only the minimum necessary information is revealed
+## 3. Objectives and Scope
 
-## Architecture
+-   **Primary objective:** To design, implement, and demonstrate a functional Zero-Knowledge age verification system using zk-SNARKs (Groth16), Circom, and Schnorr signatures.
+-   **Secondary objectives:**
+    -   Simulate a trusted government backend for issuing signed age credentials.
+    -   Implement a local proof generation server capable of creating ZK proofs based on user credentials and circuit definitions.
+    -   Develop a service provider backend capable of verifying submitted ZK proofs.
+    -   Simulate user interaction via a Chrome browser extension.
+-   **Scope:** The project focuses on a local demonstration environment. It includes the core components: credential issuance, proof generation, and proof verification. The circuits are designed specifically for age verification using Schnorr signatures.
+-   **Limitations and assumptions:**
+    -   The system operates in a simulated local environment (`localhost`).
+    -   The "government" is a mock backend, and user authentication is simplified.
+    -   Credential storage and management in the extension are basic.
+    -   The proof server runs locally, simulating generation within a secure user environment (like the extension itself in a production scenario).
+    -   The project uses the Groth16 proving system, which requires a trusted setup (assumed to be performed correctly for the provided `.zkey` files).
+    -   Error handling and security hardening are basic, suitable for a demonstration.
 
-The system consists of four main components:
+## 4. Literature Review
 
-1. **Government Backend**: Issues age credentials signed with Schnorr signatures
-2. **Chrome Extension**: Acts as an intermediary between the user, government, and service providers
-3. **Proof Server**: Generates zero-knowledge proofs of age verification
-4. **Service Provider**: Verifies proofs to grant access to age-restricted content
+# Age Verification Using Zero-Knowledge Proofs: A Literature Review
 
-### Data Flow
+Zero-knowledge proofs have emerged as a powerful cryptographic technique to enhance privacy while maintaining trust in digital identity verification. This literature review examines the development, implementation, and challenges of age verification systems using zero-knowledge proofs, with a particular focus on zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge).
 
-1. User obtains a government-issued credential through the Chrome extension
-2. When visiting a service provider, the extension detects the age verification requirement
-3. The extension sends the credential to the proof server
-4. The proof server generates a zero-knowledge proof that the user is over 16
-5. The extension sends the proof to the service provider
-6. The service provider verifies the proof and grants access if valid
+## Background and Fundamentals
 
-## Components
+Zero-knowledge proofs (ZKPs) allow a prover to convince a verifier that a statement is true without revealing any additional information beyond the validity of the statement itself. In the context of age verification, ZKPs enable users to prove they meet age requirements (e.g., "I am over 18") without disclosing their actual age or date of birth[16]. This technology addresses a critical privacy challenge in online environments where age verification is required but excessive personal data collection poses risks.
 
-### Government Backend
+### The Need for Private Age Verification
 
-The government backend is responsible for:
-- Generating cryptographic key pairs (Schnorr signatures)
-- Issuing age credentials to verified users
-- Signing credentials with the government's private key
-- Publishing the government's public key for verification
+Traditional age verification methods often require users to share sensitive identity documents or personally identifiable information. As Rosenberg et al. note, countries such as Australia, the EU, and the UK require identification via credit cards or official IDs to access age-restricted content, creating significant privacy and tracking risks[10]. The Digital Personal Data Protection Act in India similarly imposes obligations that could force businesses to verify the age of every person they interact with, potentially breaking "the internet as we know it"[11].
 
-**Key Files**:
-- `government-backend/server.js`: Main server implementation
-- `government-backend/public/app.js`: Frontend for credential issuance
+## Technical Approaches to Zero-Knowledge Age Verification
 
-### Chrome Extension
+### Hash Chain Verification
 
-The Chrome extension serves as:
-- A secure storage for the user's credential
-- An intermediary between the user and service providers
-- A client for the proof server
+One of the simpler approaches to age verification uses hash chains, as demonstrated by Sterjev (2023). In this method, a user generates a hash chain starting from a seed value, with the number of hash operations corresponding to their actual age. To prove they are above a certain age threshold (e.g., 18), they provide an intermediate hash value that can be further hashed the remaining number of times to match their committed age value[1].
 
-**Key Files**:
-- `chrome-extension/background.js`: Main extension logic
-- `chrome-extension/content.js`: Content script for page interaction
+```javascript
+const actual_age = 49;
+const age_to_prove = 18;
+const proof = hash(seed, actual_age - age_to_prove);
+const hashed_age = hash(seed, actual_age);
+```
 
-### Proof Server
+The verifier can then hash the proof value exactly `age_to_prove` times to check if it matches the committed age value, without learning the actual age[1].
 
-The proof server is responsible for:
-- Verifying the authenticity of government-issued credentials
-- Generating zero-knowledge proofs of age verification
-- Implementing the cryptographic circuits for proof generation
+### zk-SNARKs for Age Verification
 
-**Key Files**:
-- `proof-server/server.js`: Main server implementation
-- `circuit-server/schnorr_age_verification.circom`: Zero-knowledge circuit
+More sophisticated approaches use zk-SNARKs, which provide greater flexibility and security. Sterjev demonstrates implementing age verification using libraries like snarkjs and circom, where a circuit validates that a user's actual age exceeds the required threshold[1]. This approach allows for non-interactive proofs that can be verified efficiently without further interaction with the prover.
 
-### Service Provider
+The circuit for age verification can be designed as simple as:
 
-The service provider:
-- Requests age verification from users
-- Verifies zero-knowledge proofs
-- Grants access to age-restricted content based on valid proofs
+```
+template AgeVerifier() {
+    signal private input actual_age;
+    signal input age_to_prove;
+    signal output out;
 
-**Key Files**:
-- `service-provider/server.js`: Main server implementation
-- `service-provider/public/app.js`: Frontend for service provider
-
-## Implementation Details
-
-### Cryptographic Primitives
-
-#### Schnorr Signatures
-
-We implemented a simplified Schnorr signature scheme using MiMC7 hash function:
-
-1. **Key Generation**:
-   - Generate a random private key
-   - Compute the public key as `MiMC7(privateKey, 0)`
-
-2. **Signature Generation**:
-   - Generate a random nonce
-   - Compute the signature as `MiMC7(message, MiMC7(nonce, publicKey))`
-   - Return the signature, message, and nonce
-
-3. **Signature Verification**:
-   - Compute the expected signature using the public key and nonce
-   - Compare with the provided signature
-
-#### Zero-Knowledge Circuit
-
-The zero-knowledge circuit verifies:
-1. The user's age is at least 16
-2. The credential is signed by the government (using Schnorr signature verification)
-
-```circom
-template SchnorrAgeVerification() {
-    // Public inputs
-    signal input publicKey;
-
-    // Private inputs
-    signal input userAge;
-    signal input signature;
-    signal input nonce;
-
-    // Output signal
-    signal output isVerified;
-
-    // Verify age requirement (16+)
-    component ge = GreaterEqThan(64);
-    ge.in[0] <== userAge;
-    ge.in[1] <== 16;
-
-    // Verify signature
-    component mimcNonce = MiMC7(91);
-    mimcNonce.x_in <== nonce;
-    mimcNonce.k <== publicKey;
-
-    component mimcAge = MiMC7(91);
-    mimcAge.x_in <== userAge;
-    mimcAge.k <== mimcNonce.out;
-
-    component isEqual = IsEqual();
-    isEqual.in[0] <== mimcAge.out;
-    isEqual.in[1] <== signature;
-
-    // Final verification
-    isVerified <== ge.out * isEqual.out;
+    out = age_to_prove ? 1 : 0;
 }
 ```
 
-### Credential Format
+The verification process then checks the cryptographic proof without learning the actual age value[1][9].
 
-Credentials are issued as JWTs with the following structure:
+### Range Proofs
 
-```json
-{
-  "userId": "user1",
-  "name": "Alice Johnson",
-  "age": 25,
-  "signature": {
-    "signature": "417427740928922198021...",
-    "message": "25",
-    "nonce": "66290286"
-  },
-  "publicKey": "101126231122079932669731...",
-  "fixedAgeRequirement": 16,
-  "issuedAt": 1745310519547
-}
+Zero-knowledge range proofs (ZKRPs) are particularly well-suited for age verification as they allow proving that a value lies within a specific interval. As detailed in "SoK: Zero-Knowledge Range Proofs," these proofs are essential in applications where a user needs to demonstrate that a secret value (such as age) falls within certain bounds without revealing the exact value[3].
+
+Bulletproofs, described by Bünz et al., offer "short proofs for confidential transactions" and are "especially well suited for efficient range proofs on committed values"[12]. They enable proving that a committed value is in a range using logarithmic proof size, making them practical for implementation in resource-constrained environments[19].
+
+## Implementation Frameworks and Libraries
+
+### Circom and snarkjs
+
+The Circom domain-specific language and snarkjs JavaScript library have become popular tools for implementing zk-SNARKs, including age verification systems. Sterjev provides a detailed implementation using these tools, showing how to compile circuits, generate proving keys, and verify proofs[1]. This framework supports the Groth16 proving scheme, which is efficient but requires a trusted setup[9].
+
+### ZoKrates
+
+ZoKrates provides another approach to implementing age verification. A Stack Overflow question details an implementation where a user can prove their age is over 21 without revealing their date of birth[8]. The implementation uses a simple circuit that checks if the birth year and century satisfy the age requirement:
+
+```
+def main(pubName, private yearOfBirth, private centuryOfBirth):
+    x = if centuryOfBirth == 19 then 1 else 0 fi
+    y = if yearOfBirth < 98 then 1 else 0 fi
+    // Additional checks
+    return result
 ```
 
-### Proof Format
+This implementation also addresses the challenge of preventing proof reuse through nullifiers-hashes that can be registered to prevent multiple uses of the same proof[8].
 
-Proofs are generated using the Groth16 proving system and have the following structure:
+## Real-World Systems and Applications
 
-```json
-{
-  "proof": {
-    "pi_a": ["19708247411...", "11196264256...", "1"],
-    "pi_b": [["15511726351...", "9039726465..."], ["13632249563...", "15216236205..."], ["1", "0"]],
-    "pi_c": ["49128106465...", "15902572831...", "1"],
-    "protocol": "groth16",
-    "curve": "bn128"
-  },
-  "publicSignals": [
-    "1",
-    "10112623112207993266973159032438838299106541494109424229535645873971466875081"
-  ]
-}
-```
+### Yoti Keys
 
-The public signals contain:
-1. Whether the user is over 16 (1 = yes, 0 = no)
-2. The government's public key
+Yoti Keys represents a practical application of age verification that prioritizes privacy. The system allows users to "verify their age once and gain continued access to an ecosystem of websites without having to prove their age again," even when using private browsing modes[4]. While not explicitly using zk-SNARKs, Yoti's approach demonstrates the growing market for privacy-preserving age verification solutions.
 
-## Security Analysis
+### zk-creds
 
-### Security Properties
+Rosenberg et al. present "zk-creds," a protocol that uses general-purpose zero-knowledge proofs to convert existing identity documents into anonymous credentials without requiring coordination with issuing authorities. Their system demonstrates anonymous access to age-restricted videos in under 150ms using passport data, showing the practicality of these approaches[10].
 
-1. **Authenticity**: Credentials are signed by the government using Schnorr signatures, ensuring they cannot be forged.
-2. **Privacy**: Zero-knowledge proofs ensure that service providers learn only that a user is over 16, not their actual age.
-3. **Non-transferability**: Credentials are bound to specific users through the signature.
-4. **Verifiability**: Service providers can verify the authenticity of credentials without contacting the government.
+## Challenges and Considerations
 
-### Trust Assumptions
+### Trust and Credential Issuance
 
-1. **Government**: Trusted to issue valid credentials with correct age information.
-2. **Proof Server**: Trusted to generate valid proofs and not leak private information.
-3. **Chrome Extension**: Trusted to securely store credentials and interact with services.
-4. **User's Device**: Trusted not to be compromised.
+A significant challenge with zero-knowledge age verification is establishing trust in the underlying credentials. As noted in a LinkedIn post by Vishwas Anand Bhushan, "simply verifying the ZK proof isn't enough!" The verifier must also confirm that the proof was generated using credentials from a trusted issuer[5]. This highlights the need for comprehensive circuit design that verifies issuer signatures, credential validity, and user authentication alongside the age verification itself.
 
-## Potential Vulnerabilities
+### Proving Without Revealing
 
-### Collusion Attacks
+Implementing age verification without revealing any additional information presents unique cryptographic challenges. On Crypto Stack Exchange, users discuss approaches like using hash chains or elliptic curve cryptography with Pedersen Commitments to prove age requirements without revealing birth dates[20]. These discussions highlight the ongoing exploration of different mathematical approaches to the same fundamental problem.
 
-1. **Government-Service Provider Collusion**:
-   - **Vulnerability**: The government and service provider could potentially collude to track users.
-   - **Mitigation**: The system uses a fixed age requirement (16+) rather than the exact age requirement from the service provider, limiting the information that could be shared in a collusion.
-   - **Linkage Vectors**:
-     * **Timing Correlation**: The primary vector - if the government knows when a credential was issued and to whom, and a service provider knows when a proof was presented, they could correlate these events.
-     * **Public Key Linkage**: The government's public key is included in the public signals of the proof. If the government were to issue different public keys to different users (rather than using a single key for all users), this could create a unique identifier.
-   - **Protection Strength**: The current implementation provides strong protection against linking because:
-     * We use a single government public key for all users
-     * The proof only reveals that the user is over 16, not their exact age
-     * The service provider doesn't receive any user identifiers from the government
-   - **Remaining Risk**: Primarily timing correlation if the government and service providers share their logs and analyze access patterns.
+### Performance and Efficiency
 
-2. **Proof Server-Service Provider Collusion**:
-   - **Vulnerability**: The proof server and service provider could collude to track users.
-   - **Mitigation**: The proof server doesn't receive information about which service provider the user is accessing.
-   - **Remaining Risk**: Timing correlations could still be used to infer which service a user is accessing.
+Performance remains a key consideration for practical implementation. A comparative study of zkSNARK libraries for blockchains found that even for simple age verification circuits, there are significant differences in storage requirements and performance between implementations. For instance, Circom required 4KB for circuit files compared to 139KB for ZoKrates, though both had similar proof sizes[9].
 
-### Implementation Vulnerabilities
+## Recent Developments and Future Directions
 
-1. **Nonce Reuse**:
-   - **Vulnerability**: If the same nonce is reused for different signatures, it could compromise the security of the Schnorr signature scheme.
-   - **Current Implementation**: Nonces are generated randomly for each signature.
-   - **Remaining Risk**: The random number generator might not provide sufficient entropy, leading to nonce reuse.
+### Anonymous Credentials with Enhanced Features
 
-2. **Signature Verification Bypass**:
-   - **Vulnerability**: The proof server adds a default nonce if one is missing, which could potentially be exploited.
-   - **Mitigation**: The signature verification still checks that the signature is valid.
-   - **Remaining Risk**: If the signature verification logic has flaws, an attacker might be able to bypass it.
+Recent work has focused on extending anonymous credential systems with additional features. The "Revocable TACO" system introduces threshold-based anonymous credentials with opening and revocation capabilities, allowing for accountability in systems that provide anonymity[18]. This addresses scenarios where a user might default on obligations after anonymously proving age or income requirements for services like loans.
 
-3. **Circuit Vulnerabilities**:
-   - **Vulnerability**: The zero-knowledge circuit might have bugs or vulnerabilities.
-   - **Mitigation**: The circuit is relatively simple and focused on a specific verification task.
-   - **Remaining Risk**: Subtle bugs in the circuit implementation could lead to false positives or negatives.
+### Attribute Encoding Optimizations
 
-### User-Side Attacks
+Camenisch and Groß propose encoding binary and finite-set attributes as prime numbers, using the divisibility property for efficient proofs of their presence or absence[7]. This approach significantly improves the efficiency of selective disclosure in credential systems, making them more suitable for applications like electronic identity cards that require verification of multiple attributes including age.
 
-1. **Credential Sharing**:
-   - **Vulnerability**: Users could share their credentials with others.
-   - **Mitigation**: Credentials are bound to specific users through the signature.
-   - **Remaining Risk**: If users voluntarily share their entire credential (including the signature), others could use it.
+## Conclusion (from Literature Review)
 
-2. **Browser Extension Compromise**:
-   - **Vulnerability**: The browser extension could be compromised or replaced with a malicious version.
-   - **Mitigation**: Browser security model provides some protection against extension tampering.
-   - **Clarification**: A compromised extension could extract legitimate credentials but could not generate fake proofs that would pass verification. The ZK circuit ensures that only valid credentials with proper signatures can generate valid proofs.
-   - **Remaining Risk**: Sophisticated attackers who compromise the extension could steal legitimate credentials and use them to generate valid proofs.
+Zero-knowledge proofs, particularly zk-SNARKs, offer promising solutions for private age verification in digital environments. The literature shows significant progress in both theoretical approaches and practical implementations, with systems ranging from simple hash-chain verification to sophisticated anonymous credential frameworks.
 
-3. **Limitations on User Exploits**:
-   - **Credential Forgery**: Users cannot forge credentials because they are cryptographically signed by the government using the private key.
-   - **Age Modification**: Users cannot modify their age in the credential because changing the age would invalidate the signature.
-   - **Age Check Bypass**: Users cannot bypass the age verification because the ZK circuit explicitly checks that the age is ≥ 16.
-   - **Proof Tampering**: Users cannot tamper with the proof generation process to create fake proofs, as these would be rejected during verification.
-   - **Only Viable Exploit**: The only meaningful way a user could exploit the system is by using someone else's legitimate credential.
+Key challenges remain in balancing privacy with trust, ensuring efficient verification on resource-constrained devices, and establishing proper governance for credential issuance. However, the continued advancement of libraries, encoding techniques, and proof systems suggests that zero-knowledge age verification will become increasingly practical and widespread.
 
-## Future Improvements
+As one article aptly states, zero-knowledge proofs allow users to keep their "treasure chest of personal information locked away" while still proving necessary attributes like age[16], offering a path toward digital interactions that respect both security requirements and user privacy.
 
-1. **Enhanced Privacy**:
-   - Implement a more sophisticated zero-knowledge proof system that doesn't reveal the government's public key.
-   - Use a blinded credential system to prevent the government from tracking which credentials are used.
-   - Implement delayed or batched credential issuance to obscure timing correlations.
+## 5. Resource Used
 
-2. **Improved Security**:
-   - Implement a proper deterministic nonce generation scheme (e.g., RFC 6979) to prevent nonce reuse.
-   - Add a challenge-response mechanism to prevent replay attacks.
-   - Strengthen credential storage in the extension to prevent theft.
+-   **Programming Language:** JavaScript (Node.js for backends, browser JS for extension)
+-   **Frameworks/Libraries:**
+    -   Node.js
+    -   Express.js (for backend servers)
+    -   `snarkjs`: ZK-SNARK implementation library (Groth16 proving and verification).
+    -   `circomlib`/`circomlibjs`: Cryptographic primitives for Circom circuits (used implicitly via `mimc_utils.js` for Schnorr).
+    -   `jsonwebtoken`: For signing/verifying credentials during transport.
+    -   `cors`: For enabling cross-origin requests between local servers.
+    -   `axios`: For making HTTP requests between servers (Service Provider to Government).
+    -   `crypto` (Node.js built-in): For cryptographic operations.
+-   **ZK Tools:**
+    -   Circom: Domain-specific language for writing arithmetic circuits.
+    -   Groth16: zk-SNARK proving system used.
+-   **Development Environment:** Visual Studio Code, Node.js runtime, Chrome browser.
+-   **Hardware:** Standard development machine capable of running Node.js servers and Chrome.
 
-3. **Better User Experience**:
-   - Implement a more user-friendly interface for obtaining and using credentials.
-   - Add support for multiple credentials and service providers.
+## 6. Methodology
 
-4. **Extended Functionality**:
-   - Support for more complex age requirements (e.g., age ranges).
-   - Support for other types of credentials beyond age verification.
+-   **Research design/experimental setup:** The project uses a simulation-based approach with multiple locally running servers mimicking real-world entities.
+    -   **Government Backend (`localhost:3001`):** Simulates a trusted authority. Issues JWT-wrapped credentials containing the user's age and a Schnorr signature (`{ signature, nonce, message: age }`) generated using its private key. Exposes its public key via an API.
+    -   **Circuit Server (`localhost:3002`):** (Development only) A static server providing circuit files (`.wasm`, `.zkey`, verification key) to the proof generator. In production, these would be bundled.
+    -   **Proof Server (`localhost:3003`):** Runs locally on the user's machine (simulating secure local execution). Receives the credential, extracts necessary inputs (age, signature details, public key), and uses `snarkjs.groth16.fullProve` with the circuit's WASM and ZKey files to generate the ZK proof and public signals.
+    -   **Service Provider (`localhost:3000`):** Represents the website requiring age verification. It fetches the government's public key. When a user attempts access, it requests a ZK proof. Upon receiving the proof and public signals, it uses `snarkjs.groth16.verify` with the verification key. It checks the proof's validity and verifies that the public key in the public signals matches the fetched government public key.
+    -   **Chrome Extension:** Simulates the user agent. It interacts with the Government Backend to get credentials, stores them (using `chrome.storage`), interacts with the Service Provider to initiate verification, sends the credential to the local Proof Server, receives the proof, and submits it to the Service Provider.
+-   **Tools, technologies, and frameworks:** As listed in Section 5. The core is the combination of Circom for circuit definition (`schnorr_age_verification.circom`), `snarkjs` for proof generation/verification, and Node.js/Express for the server infrastructure. Schnorr signatures are used for credential signing, compatible with the circuit.
+-   **End-to-End Flow:**
+    1.  User visits the Government Backend website (`localhost:3001`) and authenticates (mocked).
+    2.  Government Backend issues a signed credential (JWT containing age, Schnorr signature, public key).
+    3.  Chrome extension stores the credential.
+    4.  User visits the Service Provider website (`localhost:3000`).
+    5.  Service Provider requires age verification and communicates the requirement (e.g., fixed age 16+) to the extension.
+    6.  Extension sends the stored credential to the local Proof Server (`localhost:3003`).
+    7.  Proof Server generates the ZK proof using the credential data and circuit files. The public signals include `isVerified` (1 if age >= requirement) and the `governmentPublicKey`.
+    8.  Proof Server returns the `proof` and `publicSignals` to the extension.
+    9.  Extension submits the `proof` and `publicSignals` to the Service Provider's `/api/verify-proof` endpoint.
+    10. Service Provider verifies the proof using the verification key and checks if the `governmentPublicKey` in the public signals matches its known key. If valid and `isVerified` is 1, access is granted.
+-   **Development vs. Production Considerations:**
+    -   **Circuit Distribution:** Development uses a central `circuit-server`. Production would bundle files with the extension or use decentralized storage (e.g., IPFS) with local caching.
+    -   **Proof Generation:** Development uses a separate `proof-server`. Production would ideally perform proof generation directly within the secure context of the browser extension to avoid exposing credentials externally.
+    -   **Trust Model:** Development relies on trusting local servers. Production relies primarily on trusting the initial government credential issuance; subsequent steps are trustless due to ZK proofs and local generation.
+-   **Data collection methods:** Not applicable (simulation-based).
+-   **Risk assessment and mitigation strategies:**
+    -   **Credential Security:** Risk of credential theft from browser storage. Mitigation: Use secure storage (`chrome.storage`), potentially encrypt credentials.
+    -   **Proof Replay:** Risk of reusing a valid proof. Mitigation: Implement nullifiers within the circuit and a registry on the Service Provider side (as discussed in literature [8], but not implemented in this demo).
+    -   **Private Key Security:** Government private key compromise would break the system. Mitigation: Secure key management practices (HSMs in real-world).
+    -   **Circuit Integrity:** Malicious circuit could leak private inputs. Mitigation: Auditing circuits, using trusted setup ceremonies.
 
-5. **Decentralization**:
-   - Explore decentralized alternatives to the government as the credential issuer.
-   - Implement a decentralized proof generation system to remove the need for a trusted proof server.
+## 7. Results
+
+-   **Summary of preliminary findings:** The implemented system successfully demonstrates the ZK age verification flow. Users can obtain a credential, generate a proof locally, and submit it to the service provider.
+-   **Interpretation of the processed data:** The service provider successfully verifies valid proofs generated using credentials from the mock government, confirming the user meets the age requirement (16+) without learning the actual age. The verification includes checking the SNARK proof itself and confirming the government public key embedded in the proof's public signals.
+-   **Screenshots/visual results:** (Placeholder - Would include screenshots of the extension popup, government/service provider websites showing credential issuance and successful verification).
+
+## 8. Analysis
+
+-   **Discussion of observed trends, insights from results:** The system validates the feasibility of using zk-SNARKs (Groth16) and Schnorr signatures for privacy-preserving age verification in a web context. The separation of concerns (issuance, proof generation, verification) works effectively in the simulated environment. The local proof generation step is crucial for maintaining user privacy, as the raw credential (containing the actual age) does not leave the user's control after issuance.
+-   **Comparisons with existing approaches or baselines:** Compared to traditional methods (sharing ID scans, DOB), this ZK approach significantly enhances privacy. Unlike simple hash chains [1], zk-SNARKs allow verification against a public key signature, binding the age proof to a trusted issuer. The performance, while not rigorously benchmarked here, relies on `snarkjs` capabilities, which are generally suitable for web applications [9].
+-   **Limitations of the analysis and external factors considered:** The analysis is based on a local simulation. Real-world deployment would face challenges like performance on diverse user devices, secure key distribution, robust credential management, and the need for a widely accepted trust framework for credential issuers. The lack of nullifiers limits protection against proof replay in this specific demo. The reliance on Schnorr signatures requires compatible circuit libraries.
+
+## 9. Future Work
+
+-   **Planned expansions or next steps:**
+    -   **Implement Nullifiers:** Add unique nullifiers to the circuit and verification logic to prevent proof replay attacks [8].
+    -   **Integrate Proof Generation into Extension:** Move proof generation logic directly into the Chrome extension's service worker or offscreen document, eliminating the need for a separate local proof server and enhancing security.
+    -   **Explore Other Proof Systems:** Investigate alternatives like Bulletproofs [12, 19] for potentially smaller proof sizes or different trust assumptions, or PLONK for universal trusted setups.
+    -   **Dynamic Age Requirements:** Modify the circuit and flow to support variable age requirements set by the service provider, rather than a fixed one.
+    -   **Credential Revocation:** Implement a mechanism for revoking compromised or invalid credentials [18, 26].
+    -   **Benchmarking:** Conduct performance testing on various devices for proof generation and verification times.
+    -   **UI/UX Improvements:** Enhance the Chrome extension interface for better usability.
+-   **New features, enhancements, or alternative strategies:** Consider using Decentralized Identifiers (DIDs) and Verifiable Credentials (VCs) standards alongside ZKPs for a more interoperable identity framework. Explore attribute encoding optimizations [7].
+-   **Timeline for future improvements:** (Placeholder)
+
+## 10. Conclusion
+
+-   **Summary of key points:** This project successfully implemented a Zero-Knowledge age verification system using zk-SNARKs (Groth16), Circom, and Schnorr signatures. It demonstrates a privacy-preserving flow involving credential issuance by a mock government, local proof generation, and verification by a service provider, orchestrated via a Chrome extension simulation.
+-   **Final remarks on project feasibility and significance:** The project confirms the technical feasibility of ZK-based age verification for web applications. While challenges remain for production deployment (performance, security, trust frameworks), the approach offers significant privacy advantages over traditional methods, aligning with the principles discussed in the literature [5, 16]. It serves as a valuable proof-of-concept for building more private and user-centric digital identity solutions.
+
+## 11. References
+
+[1] https://www.linkedin.com/pulse/age-zero-knowledge-proofs-marjan-sterjev
+[2] https://www.nttdata.com/global/en/insights/focus/2024/what-is-zero-knowledge-proof
+[3] https://drops.dagstuhl.de/storage/00lipics/lipics-vol316-aft2024/LIPIcs.AFT.2024.14/LIPIcs.AFT.2024.14.pdf
+[4] https://www.yoti.com/blog/yoti-keys-private-seamless-anonymous-age-verification/
+[5] https://www.linkedin.com/posts/vishwas-anand-bhushan-bab55576_zk-zkp-zk-activity-7261225902129221632-WhvA
+[6] https://idemix.wordpress.com/scenarios/
+[7] https://eprint.iacr.org/2010/496.pdf
+[8] https://stackoverflow.com/questions/51605174/writing-a-circuit-in-zokrates-to-proof-age-is-over-21-years
+[9] https://ceur-ws.org/Vol-3791/paper7.pdf
+[10] https://eprint.iacr.org/2022/878.pdf
+[11] https://exmachina.in/10/04/2024/age-tokens/
+[12] https://eprint.iacr.org/2017/1066.pdf
+[13] https://crypto.stackexchange.com/questions/68791/bulletproofs-range-proof-of-value-provided-from-trusted-third-party
+[14] https://docs.sui.io/references/framework/sui/groth16
+[15] https://www.linkedin.com/pulse/zero-knowledge-proof-developers-guide-example-gourav-patidar-3od3f
+[16] https://www.galaxy.com/insights/perspectives/zero-knowledge-proofs-the-magic-key-to-identity-privacy/
+[17] https://developers.id.me/documentation/identity-gateway/attribute-exchange/age
+[18] https://dl.acm.org/doi/pdf/10.1145/3634737.3637656
+[19] https://github.com/sdiehl/bulletproofs
+[20] https://crypto.stackexchange.com/questions/96232/zkp-prove-that-18-while-hiding-age
+[21] https://tokenminds.co/blog/knowledge-base/zk-snarks-in-practice
+[22] https://metaschool.so/articles/zero-knowledge-proofs-understanding-basics/
+[23] https://eprint.iacr.org/2024/1153.pdf
+[24] https://eprint.iacr.org/2024/430.pdf
+[25] https://ondato.com/blog/onage/
+[26] https://identity.foundation/revocation/non-revocation-token/
+[27] https://onlinelibrary.wiley.com/doi/full/10.1002/spy2.401
+[28] https://veridas.com/en/what-is-zero-knowledge-proof/
+[29] https://www.mystenlabs.com/blog/zero-knowledge-range-proofs
+[30] https://hyperverge.co/blog/how-does-age-verification-works-online/
+[31] https://eprint.iacr.org/2022/878.pdf (Duplicate of [10])
+[32] https://www.di.ens.fr/~nitulesc/files/Survey-SNARKs.pdf
+[33] https://hyperledger-fabric.readthedocs.io/en/latest/idemix.html
+[34] https://www.zurich.ibm.com/pdf/csc/Identity_Mixer_Nov_2015.pdf
+[35] https://github.com/IBM/idemix
+[36] https://eprint.iacr.org/2012/298.pdf
+[37] https://www.developer.tech.gov.sg/communities/events/stack-meetups/past-webinars/zero-knowledge-proof-part-2.html
+[38] https://www.idology.com/use-cases/age-verification/
+[39] https://www.scribd.com/document/551916912/2-medical-certificate-to-prove-age
+[40] https://www.ieee-security.org/TC/SPW2025/ConPro/papers/liu-conpro25.pdf
+[41] https://github.com/Zokrates/ZoKrates/issues/94
+[42] https://experience.idemia.com/identity-proofing/
+[43] https://fisher.wharton.upenn.edu/wp-content/uploads/2020/09/Thesis_Terrence-Jo.pdf
+[44] https://arxiv.org/pdf/2310.15934.pdf
+[45] https://www.mdpi.com/2078-2489/15/8/463
+[46] https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/cs4796/gf45-Final_Report.pdf
+[47] https://www.rjwave.org/ijedr/papers/IJEDR2101020.pdf
+[48] https://eprint.iacr.org/2024/1348.pdf
+[49] https://www.usenix.org/system/files/usenixsecurity23-hesse.pdf
+[50] https://eprint.iacr.org/2025/172.pdf
+[51] https://blog.pantherprotocol.io/bulletproofs-in-crypto-an-introduction-to-a-non-interactive-zk-proof/
+[52] https://www.rareskills.io/post/bulletproofs-zk
+[53] https://www.youtube.com/watch?v=DDe29vLNhz8
+[54] https://tlu.tarilabs.com/cryptography/the-bulletproof-protocols.html
+[55] https://www.rareskills.io/post/groth16
+[56] https://crypto.stackexchange.com/questions/96232/zkp-prove-that-18-while-hiding-age (Duplicate of [20])
+[57] https://cryptopapers.info/assets/pdf/bulletproofs.pdf
+[58] https://github.com/matter-labs-archive/Groth16BatchVerifier
+[59] https://eprint.iacr.org/2020/735.pdf
+[60] https://docs.iota.org/developer/cryptography/on-chain/groth16
+[61] https://www.law.cornell.edu/cfr/text/20/219.21
+[62] https://www.yoti.com/blog/yoti-keys-private-seamless-anonymous-age-verification/ (Duplicate of [4])
+[63] https://www.idenfy.com/glossary/age-verification-system/
+[64] https://www.nobroker.in/forum/what-are-the-age-proof-documents/
+[65] https://www.linkedin.com/pulse/age-zero-knowledge-proofs-marjan-sterjev (Duplicate of [1])
+[66] https://americarenewing.com/issues/identity-on-the-internet-protecting-children-and-privacy-and-building-a-proof-of-humanity-regulatory-regime-for-an-ai-driven-internet/
+[67] https://blog.stratumn.com/zero-knowledge-proof-of-age-using-hash-chains-d034d262bd5f
+[68] https://crypto.stanford.edu/bulletproofs/
+[69] https://www.zellic.io/blog/gnark-bug-groth16-commitments
+[70] https://ceur-ws.org/Vol-3791/paper7.pdf (Duplicate of [9])
+[71] https://doc-internal.dalek.rs/bulletproofs/notes/range_proof/index.html
+
+## 12. Team Contributions
+
+-   **Chirag Aggarwal (2021EEB1161):** ZK Circuit design and overall system architecture.
+-   **Pranav Bali (2021EEB1193):** Literature Review, Chrome Extension Frontend and Backend integration.
+-   **Jugal Alan:** Mock implementation development, Proof Server implementation, Circuit Files management.
