@@ -15,7 +15,9 @@ The system consists of several components working together:
 ## Getting Started
 
 -   **Setup:** For detailed instructions on setting up the circuits, installing dependencies, and running all the servers and the extension, please refer to the [**SETUP_GUIDE.md**](./SETUP_GUIDE.md).
--   **Documentation:** For a comprehensive explanation of the project's architecture, methodology, literature review, and components, see [**ZK_Age_Verification_Documentation.md**](./ZK_Age_Verification_Documentation.md).
+-   **Documentation:** 
+    -   **Markdown:** For a comprehensive explanation of the project's architecture, methodology, literature review, and components in editable format, see [**ZK_Age_Verification_Documentation.md**](./ZK_Age_Verification_Documentation.md).
+    -   **PDF:** For a finalized, publication-ready version of the documentation, see [**ZK Age Verification Project Documentation.pdf**](./ZK%20Age%20Verification%20Project%20Documentation.pdf).
 
 ## Technology Stack
 
